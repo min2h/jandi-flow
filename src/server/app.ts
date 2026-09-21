@@ -5,7 +5,8 @@ import { z } from "zod";
 import type { SqliteDb } from "./sqlite.js";
 import { decryptSecret, encryptSecret } from "../lib/crypto.js";
 import { parseGithubHttpsUrl } from "../lib/github-url.js";
-import { pickCommitMessage, resolveCommitCount } from "../lib/messages.js";
+import { resolvePlantPlan, todayKey } from "../lib/burn.js";
+import { pickCommitMessage } from "../lib/messages.js";
 import { parseHm } from "../lib/schedule.js";
 import type { GithubUser, RepoInfo, RepoStatus, Settings } from "../lib/types.js";
 import { getSettings, grassDays, listLogs, listRepos, saveSettings } from "./db.js";
@@ -31,7 +32,11 @@ const settingsSchema = z.object({
   commitMode: z.enum(["empty", "log"]),
   commitsPerDay: z.number().int().min(1).max(20),
   commitsPerDayMode: z.enum(["fixed", "random"]),
-  schedulerEnabled: z.boolean()
+  schedulerEnabled: z.boolean(),
+  burnEnabled: z.boolean(),
+  burnEveryDays: z.number().int().min(1).max(90),
+  burnJitterDays: z.number().int().min(0).max(30),
+  burnCommits: z.number().int().min(4).max(20)
 });
 
 function nowIso(): string {
@@ -120,7 +125,7 @@ export function createApp(deps: AppDeps) {
     );
   };
 
-  const plantOne = async (repoId: number) => {
+  const plantOne = async (repoId: number, forceBurn = false) => {
     const { token, user } = requireToken();
     const repo = deps.db.prepare("SELECT * FROM repos WHERE id = ?").get(repoId) as Record<string, unknown> | undefined;
     if (!repo) throw Object.assign(new Error("연결된 레포가 없습니다"), { status: 404 });
@@ -138,7 +143,20 @@ export function createApp(deps: AppDeps) {
       throw Object.assign(new Error(checked.error || "연결 검증 실패"), { status: 409, mapped: checked.status });
     }
     const settings = getSettings(deps.db);
-    const count = resolveCommitCount(settings.commitsPerDayMode, settings.commitsPerDay);
+    const state = deps.db.prepare("SELECT last_run_key, next_random_hm, next_burn_day FROM scheduler_state WHERE id = 1").get() as {
+      next_burn_day?: string | null;
+    } | undefined;
+    const plan = resolvePlantPlan({
+      burnEnabled: settings.burnEnabled,
+      burnEveryDays: settings.burnEveryDays,
+      burnJitterDays: settings.burnJitterDays,
+      burnCommits: settings.burnCommits,
+      nextBurnDay: state?.next_burn_day || null,
+      today: todayKey(new Date(), settings.timezone),
+      forceBurn
+    });
+    deps.db.prepare("UPDATE scheduler_state SET next_burn_day = ? WHERE id = 1").run(plan.nextBurnDay || null);
+    const count = plan.count;
     try {
       for (let i = 0; i < count; i += 1) {
         const message = pickCommitMessage(settings.messageMode, settings.message);
@@ -169,7 +187,13 @@ export function createApp(deps: AppDeps) {
       nowIso(),
       repoId
     );
-    addLog(repoId, true, `${checked.info.owner}/${checked.info.name} 에 ${count}회 심기 완료`);
+    addLog(
+      repoId,
+      true,
+      plan.intensity === "burn"
+        ? `${checked.info.owner}/${checked.info.name} 에 불타는 잔디 ${count}회`
+        : `${checked.info.owner}/${checked.info.name} 에 연한 잔디 ${count}회`
+    );
   };
 
   const runAll = async () => {
@@ -336,17 +360,26 @@ export function createApp(deps: AppDeps) {
   });
 
   app.get("/api/logs", (_req, res) => {
-    res.json({ logs: listLogs(deps.db), grass: grassDays(deps.db) });
+    const grass = grassDays(deps.db);
+    res.json({ logs: listLogs(deps.db), grass: [...grass.light, ...grass.burn], grassBurn: grass.burn });
   });
 
   app.post("/api/run-now", async (req, res) => {
     try {
       requireToken();
       const repoId = req.body?.repoId ? Number(req.body.repoId) : null;
+      const forceBurn = Boolean(req.body?.forceBurn);
       if (repoId) {
-        await plantOne(repoId);
+        await plantOne(repoId, forceBurn);
       } else {
-        await runAll();
+        const repos = listRepos(deps.db);
+        for (const repo of repos) {
+          try {
+            await plantOne(repo.id, forceBurn);
+          } catch {
+            // plantOne already writes status + logs
+          }
+        }
       }
       res.json({ ok: true, repos: listRepos(deps.db), logs: listLogs(deps.db) });
     } catch (error) {

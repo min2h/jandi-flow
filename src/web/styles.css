@@ -112,6 +112,7 @@ h2, .kicker {
   gap: 8px;
 }
 .deco-tile .pixel-art { margin-bottom: 4px; }
+.deco-tile p { font-size: 12px; opacity: 0.75; margin: 0; max-width: 180px; }
 .deco-corner {
   position: absolute;
   right: 14px;

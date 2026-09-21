@@ -38,7 +38,11 @@ const PREVIEW_SETTINGS: Settings = {
   commitMode: "empty",
   commitsPerDay: 1,
   commitsPerDayMode: "fixed",
-  schedulerEnabled: true
+  schedulerEnabled: true,
+  burnEnabled: true,
+  burnEveryDays: 7,
+  burnJitterDays: 2,
+  burnCommits: 8
 };
 
 const STATUS_LABEL: Record<Repo["status"], string> = {
@@ -48,15 +52,16 @@ const STATUS_LABEL: Record<Repo["status"], string> = {
   push_denied: "push 불가"
 };
 
-function grassCells(days: string[]): string[] {
-  const set = new Set(days);
+function grassCells(days: string[], burnDays: string[]): string[] {
+  const light = new Set(days);
+  const burn = new Set(burnDays);
   const cells: string[] = [];
   const today = new Date();
   for (let i = 370; i >= 0; i -= 1) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     const key = d.toISOString().slice(0, 10);
-    cells.push(set.has(key) ? "g2" : "");
+    cells.push(burn.has(key) ? "g3" : light.has(key) ? "g1" : "");
   }
   return cells.slice(-371);
 }
@@ -68,6 +73,7 @@ export function App() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [logs, setLogs] = useState<JobLog[]>([]);
   const [grass, setGrass] = useState<string[]>([]);
+  const [grassBurn, setGrassBurn] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [createName, setCreateName] = useState("janfi-garden");
@@ -83,6 +89,7 @@ export function App() {
         { id: 1, repoId: 1, ok: true, message: "min2h/janfi-garden 에 1회 심기 완료", createdAt: new Date().toISOString() }
       ]);
       setGrass([new Date().toISOString().slice(0, 10)]);
+      setGrassBurn([]);
       return;
     }
     if (withMe) {
@@ -98,13 +105,14 @@ export function App() {
     setSettings(settingRes);
     setLogs(logRes.logs);
     setGrass(logRes.grass);
+    setGrassBurn(logRes.grassBurn || []);
   };
 
   useEffect(() => {
     void load();
   }, []);
 
-  const cells = useMemo(() => grassCells(grass), [grass]);
+  const cells = useMemo(() => grassCells(grass, grassBurn), [grass, grassBurn]);
 
   const wrap = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -173,44 +181,52 @@ export function App() {
             </div>
           </section>
           <section className="tile white span-5 tall deco-tile">
-            <PixelArt name="ghost" scale={6} />
-            <div className="kicker">PIXEL</div>
-            <h2>유령 한 마리</h2>
+            <PixelArt name="sprout" scale={6} />
+            <div className="kicker">매일</div>
+            <h2>연한 잔디</h2>
+            <p>기본값. 하루 1커밋으로 연한 초록칸이 생깁니다.</p>
+          </section>
+          <section className="tile mint span-3 deco-tile">
+            <PixelArt name="leaf" scale={5} />
+            <div className="kicker">선택</div>
+            <h2>불타는 잔디</h2>
+            <p>며칠마다 여러 커밋으로 진한 초록.</p>
           </section>
           <section className="tile peach span-3 deco-tile">
             <PixelArt name="apple" scale={5} />
-            <div className="kicker">FRUIT</div>
+            <div className="kicker">장식</div>
             <h2>사과</h2>
-          </section>
-          <section className="tile mint span-3 deco-tile">
-            <PixelArt name="sprout" scale={5} />
-            <div className="kicker">GARDEN</div>
-            <h2>새싹</h2>
+            <p>기능 버튼이 아닙니다.</p>
           </section>
           <section className="tile dark span-3 deco-tile">
-            <PixelArt name="pumpkin" scale={5} />
-            <div className="kicker">FALL</div>
-            <h2>호박</h2>
+            <PixelArt name="moon" scale={5} />
+            <div className="kicker">장식</div>
+            <h2>달</h2>
+            <p>정원 분위기용 도트입니다.</p>
           </section>
           <section className="tile sky span-3 deco-tile">
             <PixelArt name="bunny" scale={5} />
-            <div className="kicker">FRIEND</div>
+            <div className="kicker">장식</div>
             <h2>토끼</h2>
+            <p>픽셀 갤러리 타일입니다.</p>
           </section>
           <section className="tile light span-4 deco-tile">
             <PixelArt name="kid" scale={5} />
-            <div className="kicker">CREW</div>
+            <div className="kicker">장식</div>
             <h2>정원사</h2>
+            <p>로그인 후 잔디를 관리합니다.</p>
           </section>
           <section className="tile mint span-4 deco-tile">
-            <PixelArt name="clover" scale={5} />
-            <div className="kicker">LUCK</div>
-            <h2>클로버</h2>
+            <PixelArt name="ghost" scale={5} />
+            <div className="kicker">장식</div>
+            <h2>유령</h2>
+            <p>빈 커밋도 잔디는 자랍니다.</p>
           </section>
           <section className="tile dark span-4 deco-tile">
-            <PixelArt name="moon" scale={5} />
-            <div className="kicker">NIGHT</div>
-            <h2>달</h2>
+            <PixelArt name="pumpkin" scale={5} />
+            <div className="kicker">장식</div>
+            <h2>호박</h2>
+            <p>클릭해도 설정이 바뀌지 않습니다.</p>
           </section>
         </div>
       ) : (
@@ -303,7 +319,7 @@ export function App() {
               <input
                 value={connectUrl}
                 onChange={(e) => setConnectUrl(e.target.value)}
-                placeholder="https://github.com/owner/repo"
+                placeholder="https://github.com/min2h/jandi-flow-test-repo"
               />
               <button
                 disabled={busy}
@@ -318,7 +334,7 @@ export function App() {
                 <PixelArt name="check" scale={2} />
                 연결 확인
               </button>
-              <div className="hint">public/private 모두 가능. 삭제되거나 키가 바뀌면 상태가 끊깁니다.</div>
+              <div className="hint">private 테스트면 PAT에 repo 권한이 있어야 합니다. 예: https://github.com/min2h/jandi-flow-test-repo</div>
             </div>
           </section>
 
@@ -349,6 +365,10 @@ export function App() {
                     <button className="ok" disabled={busy} onClick={() => wrap(async () => { await api.runNow(repo.id); await load(false); })}>
                       <PixelArt name="sprout" scale={2} />
                       지금 심기
+                    </button>
+                    <button disabled={busy} onClick={() => wrap(async () => { await api.runNow(repo.id, true); await load(false); })}>
+                      <PixelArt name="leaf" scale={2} />
+                      오늘 불태우기
                     </button>
                     <button className="warn" disabled={busy} onClick={() => wrap(async () => { await api.deleteRepo(repo.id); await load(false); })}>
                       <PixelArt name="warn" scale={2} />
@@ -424,6 +444,44 @@ export function App() {
                   />
                   스케줄러 켜기
                 </label>
+                <label className="row">
+                  <input
+                    type="checkbox"
+                    checked={settings.burnEnabled}
+                    onChange={(e) => setSettings({ ...settings, burnEnabled: e.target.checked })}
+                    style={{ width: "auto" }}
+                  />
+                  불타는 잔디 (며칠마다 진한 초록)
+                </label>
+                {settings.burnEnabled && (
+                  <div className="row">
+                    <label className="hint">간격(일)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={90}
+                      value={settings.burnEveryDays}
+                      onChange={(e) => setSettings({ ...settings, burnEveryDays: Number(e.target.value) })}
+                    />
+                    <label className="hint">±랜덤</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={30}
+                      value={settings.burnJitterDays}
+                      onChange={(e) => setSettings({ ...settings, burnJitterDays: Number(e.target.value) })}
+                    />
+                    <label className="hint">그날 커밋 수</label>
+                    <input
+                      type="number"
+                      min={4}
+                      max={20}
+                      value={settings.burnCommits}
+                      onChange={(e) => setSettings({ ...settings, burnCommits: Number(e.target.value) })}
+                    />
+                  </div>
+                )}
+                <div className="hint">끄면 매일 연한 초록(1커밋). 켜면 간격±랜덤 뒤에만 진한 초록이 올라갑니다.</div>
                 <button
                   className="ok"
                   disabled={busy}

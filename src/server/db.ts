@@ -110,7 +110,11 @@ export function getSettings(db: SqliteDb): Settings {
     commitMode: row.commit_mode === "log" ? "log" : "empty",
     commitsPerDay: Number(row.commits_per_day),
     commitsPerDayMode: row.commits_per_day_mode === "random" ? "random" : "fixed",
-    schedulerEnabled: Boolean(row.scheduler_enabled)
+    schedulerEnabled: Boolean(row.scheduler_enabled),
+    burnEnabled: Boolean(row.burn_enabled),
+    burnEveryDays: Number(row.burn_every_days || 7),
+    burnJitterDays: Number(row.burn_jitter_days ?? 2),
+    burnCommits: Number(row.burn_commits || 8)
   };
 }
 
@@ -127,11 +131,16 @@ export function saveSettings(db: SqliteDb, settings: Settings): Settings {
       commit_mode = @commitMode,
       commits_per_day = @commitsPerDay,
       commits_per_day_mode = @commitsPerDayMode,
-      scheduler_enabled = @schedulerEnabled
+      scheduler_enabled = @schedulerEnabled,
+      burn_enabled = @burnEnabled,
+      burn_every_days = @burnEveryDays,
+      burn_jitter_days = @burnJitterDays,
+      burn_commits = @burnCommits
     WHERE id = 1
   `).run({
     ...settings,
-    schedulerEnabled: settings.schedulerEnabled ? 1 : 0
+    schedulerEnabled: settings.schedulerEnabled ? 1 : 0,
+    burnEnabled: settings.burnEnabled ? 1 : 0
   });
   return getSettings(db);
 }
@@ -153,9 +162,15 @@ export function listLogs(db: SqliteDb, limit = 40): JobLog[] {
   });
 }
 
-export function grassDays(db: SqliteDb): string[] {
+export function grassDays(db: SqliteDb): { light: string[]; burn: string[] } {
   const rows = db.prepare(
-    "SELECT DISTINCT substr(created_at, 1, 10) AS day FROM job_logs WHERE ok = 1"
-  ).all() as Array<{ day: string }>;
-  return rows.map((r) => r.day);
+    "SELECT message, substr(created_at, 1, 10) AS day FROM job_logs WHERE ok = 1"
+  ).all() as Array<{ message: string; day: string }>;
+  const burn = new Set<string>();
+  const light = new Set<string>();
+  for (const row of rows) {
+    if (String(row.message).includes("불타는")) burn.add(row.day);
+    else light.add(row.day);
+  }
+  return { light: [...light], burn: [...burn] };
 }

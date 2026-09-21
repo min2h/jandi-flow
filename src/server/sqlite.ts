@@ -114,13 +114,17 @@ export async function createSqlite(dbPath: string): Promise<SqliteDb> {
               commit_mode: named.commitMode,
               commits_per_day: named.commitsPerDay,
               commits_per_day_mode: named.commitsPerDayMode,
-              scheduler_enabled: named.schedulerEnabled
+              scheduler_enabled: named.schedulerEnabled,
+              burn_enabled: named.burnEnabled ?? 0,
+              burn_every_days: named.burnEveryDays ?? 7,
+              burn_jitter_days: named.burnJitterDays ?? 2,
+              burn_commits: named.burnCommits ?? 8
             }];
             persist();
             return { lastInsertRowid: 1, changes: 1 };
           }
           if (text.startsWith("INSERT INTO scheduler_state")) {
-            tables.scheduler_state = [{ id: 1, last_run_key: null, next_random_hm: null }];
+            tables.scheduler_state = [{ id: 1, last_run_key: null, next_random_hm: null, next_burn_day: null }];
             persist();
             return { lastInsertRowid: 1, changes: 1 };
           }
@@ -150,7 +154,11 @@ export async function createSqlite(dbPath: string): Promise<SqliteDb> {
               commit_mode: named.commitMode,
               commits_per_day: named.commitsPerDay,
               commits_per_day_mode: named.commitsPerDayMode,
-              scheduler_enabled: named.schedulerEnabled
+              scheduler_enabled: named.schedulerEnabled,
+              burn_enabled: named.burnEnabled ?? 0,
+              burn_every_days: named.burnEveryDays ?? 7,
+              burn_jitter_days: named.burnJitterDays ?? 2,
+              burn_commits: named.burnCommits ?? 8
             };
             persist();
             return { lastInsertRowid: 1, changes: 1 };
@@ -167,6 +175,14 @@ export async function createSqlite(dbPath: string): Promise<SqliteDb> {
             tables.scheduler_state[0] = {
               ...(tables.scheduler_state[0] || { id: 1 }),
               next_random_hm: values[0]
+            };
+            persist();
+            return { lastInsertRowid: 1, changes: 1 };
+          }
+          if (text.startsWith("UPDATE scheduler_state SET next_burn_day")) {
+            tables.scheduler_state[0] = {
+              ...(tables.scheduler_state[0] || { id: 1 }),
+              next_burn_day: values[0]
             };
             persist();
             return { lastInsertRowid: 1, changes: 1 };
@@ -259,12 +275,12 @@ export async function createSqlite(dbPath: string): Promise<SqliteDb> {
             return [...(tables.job_logs || [])].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, limit);
           }
           if (text.includes("FROM job_logs WHERE ok = 1")) {
-            const days = new Set(
-              (tables.job_logs || [])
-                .filter((row) => Number(row.ok) === 1)
-                .map((row) => String(row.created_at).slice(0, 10))
-            );
-            return [...days].map((day) => ({ day }));
+            return (tables.job_logs || [])
+              .filter((row) => Number(row.ok) === 1)
+              .map((row) => ({
+                message: String(row.message),
+                day: String(row.created_at).slice(0, 10)
+              }));
           }
           return [];
         }

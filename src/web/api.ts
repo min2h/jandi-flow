@@ -31,6 +31,10 @@ export interface Settings {
   commitsPerDay: number;
   commitsPerDayMode: "fixed" | "random";
   schedulerEnabled: boolean;
+  burnEnabled: boolean;
+  burnEveryDays: number;
+  burnJitterDays: number;
+  burnCommits: number;
 }
 
 export interface JobLog {
@@ -67,10 +71,10 @@ export const api = {
     request<{ status: Repo["status"]; error: string | null; repo: Repo }>(`/api/repos/${id}/health`, { method: "POST" }),
   settings: () => request<Settings>("/api/settings"),
   saveSettings: (body: Settings) => request<Settings>("/api/settings", { method: "PUT", body: JSON.stringify(body) }),
-  logs: () => request<{ logs: JobLog[]; grass: string[] }>("/api/logs"),
-  runNow: (repoId?: number) =>
+  logs: () => request<{ logs: JobLog[]; grass: string[]; grassBurn: string[] }>("/api/logs"),
+  runNow: (repoId?: number, forceBurn?: boolean) =>
     request<{ ok: boolean; repos: Repo[]; logs: JobLog[] }>("/api/run-now", {
       method: "POST",
-      body: JSON.stringify(repoId ? { repoId } : {})
+      body: JSON.stringify({ ...(repoId ? { repoId } : {}), forceBurn: Boolean(forceBurn) })
     })
 };

@@ -190,6 +190,17 @@ describe("settings and run", () => {
     expect(planted).toBe(1);
   });
 
+  it("forceBurn plants many commits for dark grass", async () => {
+    let planted = 0;
+    const { app } = await setup(makeGithub(), makeGit(async () => { planted += 1; }));
+    await login(app);
+    const current = await request(app).get("/api/settings");
+    await request(app).put("/api/settings").send({ ...current.body, burnEnabled: true, burnCommits: 5 });
+    const created = await request(app).post("/api/repos/connect").send({ url: "https://github.com/min2h/garden" });
+    await request(app).post("/api/run-now").send({ repoId: created.body.id, forceBurn: true }).expect(200);
+    expect(planted).toBe(5);
+  });
+
   it("skips and marks repo_missing if repo disappears", async () => {
     let calls = 0;
     const github = makeGithub({

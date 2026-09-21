@@ -39,6 +39,10 @@ export interface Settings {
   commitsPerDay: number;
   commitsPerDayMode: CountMode;
   schedulerEnabled: boolean;
+  burnEnabled: boolean;
+  burnEveryDays: number;
+  burnJitterDays: number;
+  burnCommits: number;
 }
 
 export interface ConnectedRepo {
@@ -74,7 +78,11 @@ export const DEFAULT_SETTINGS: Settings = {
   commitMode: "empty",
   commitsPerDay: 1,
   commitsPerDayMode: "fixed",
-  schedulerEnabled: true
+  schedulerEnabled: true,
+  burnEnabled: false,
+  burnEveryDays: 7,
+  burnJitterDays: 2,
+  burnCommits: 8
 };
 
 export const RANDOM_MESSAGES = [
