@@ -1,0 +1,260 @@
+:root {
+  --bg: #111114;
+  --ink: #1a1a1d;
+  --paper: #f6f1e8;
+  --paper-2: #fffdf8;
+  --muted: #8b8794;
+  --line: #2a2a30;
+  --grass-0: #2b2b31;
+  --grass-1: #3d6b3a;
+  --grass-2: #5dcf6a;
+  --grass-3: #b6f5a8;
+  --warn: #e85d4c;
+  --ok: #5dcf6a;
+  --tile-radius: 22px;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { min-height: 100%; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 20% 10%, #1b1b22 0, transparent 28%),
+    radial-gradient(circle at 90% 80%, #1a1714 0, transparent 24%),
+    var(--bg);
+  color: var(--paper);
+  font-family: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(#2a2a30 1.1px, transparent 1.2px);
+  background-size: 18px 18px;
+  opacity: 0.45;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 28px 20px 64px;
+}
+
+.pixel-title {
+  font-family: "Press Start 2P", "Gaegu", sans-serif;
+  letter-spacing: 1px;
+  line-height: 1.6;
+}
+
+h2, .kicker {
+  font-family: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  font-weight: 700;
+}
+
+.mosaic {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+}
+
+.tile {
+  border-radius: var(--tile-radius);
+  padding: 18px 18px 16px;
+  min-height: 140px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.28);
+}
+
+.tile.dark {
+  background: #17171c;
+  color: var(--paper);
+  border: 2px solid #2b2b33;
+}
+.tile.light {
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid #efe7d8;
+}
+.tile.mint { background: #d8f5c8; color: var(--ink); }
+.tile.peach { background: #ffd7b8; color: var(--ink); }
+.tile.sky { background: #d7ecff; color: var(--ink); }
+
+.span-3 { grid-column: span 3; }
+.span-4 { grid-column: span 4; }
+.span-5 { grid-column: span 5; }
+.span-6 { grid-column: span 6; }
+.span-7 { grid-column: span 7; }
+.span-8 { grid-column: span 8; }
+.span-12 { grid-column: span 12; }
+.tall { min-height: 250px; }
+.taller { min-height: 320px; }
+
+.kicker {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+h1, h2, h3 { margin: 0 0 8px; }
+h1 { font-size: 22px; }
+h2 { font-size: 16px; }
+p { margin: 0 0 10px; line-height: 1.55; font-size: 14px; }
+
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.stack { display: flex; flex-direction: column; gap: 8px; }
+
+input, select, textarea, button {
+  font-family: inherit;
+  font-size: 14px;
+}
+input, select, textarea {
+  width: 100%;
+  border: 3px solid #1a1a1d;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  color: #111;
+  outline: none;
+}
+textarea { min-height: 72px; resize: vertical; }
+
+button {
+  border: 3px solid #1a1a1d;
+  background: #111114;
+  color: #fff;
+  border-radius: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+  image-rendering: pixelated;
+}
+button.ghost {
+  background: transparent;
+  color: inherit;
+}
+button.ok { background: #2f7a38; }
+button.warn { background: var(--warn); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.user-chip {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.user-chip img {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  image-rendering: pixelated;
+  border: 3px solid #111;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 2px solid currentColor;
+}
+.status-connected { color: #2f7a38; background: #d8f5c8; }
+.status-repo_missing, .status-auth_invalid, .status-push_denied {
+  color: #8b1e14;
+  background: #ffd2cb;
+}
+
+.grass {
+  display: grid;
+  grid-template-columns: repeat(53, 1fr);
+  gap: 2px;
+}
+.cell {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--grass-0);
+}
+.cell.g1 { background: var(--grass-1); }
+.cell.g2 { background: var(--grass-2); }
+.cell.g3 { background: var(--grass-3); }
+
+.repo-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow: auto; }
+.repo-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.06);
+}
+.logs { max-height: 180px; overflow: auto; font-size: 12px; }
+.log-ok { color: #3d9e4a; }
+.log-fail { color: #e85d4c; }
+
+.sprite {
+  image-rendering: pixelated;
+  position: absolute;
+}
+.ghost {
+  width: 72px;
+  height: 88px;
+  right: 16px;
+  bottom: 12px;
+  background:
+    linear-gradient(#111 0 0) 16px 8px / 40px 8px,
+    linear-gradient(#111 0 0) 8px 16px / 56px 48px,
+    linear-gradient(#111 0 0) 16px 64px / 8px 16px,
+    linear-gradient(#111 0 0) 32px 64px / 8px 16px,
+    linear-gradient(#111 0 0) 48px 64px / 8px 16px,
+    linear-gradient(#fff 0 0) 16px 16px / 40px 40px,
+    linear-gradient(#111 0 0) 24px 28px / 8px 8px,
+    linear-gradient(#111 0 0) 44px 28px / 8px 8px;
+  background-repeat: no-repeat;
+}
+.apple {
+  width: 56px;
+  height: 56px;
+  right: 18px;
+  top: 22px;
+  background:
+    linear-gradient(#2f7a38 0 0) 24px 0 / 8px 10px,
+    linear-gradient(#e85d4c 0 0) 8px 12px / 40px 36px,
+    linear-gradient(#ff8a6b 0 0) 14px 18px / 12px 8px;
+  background-repeat: no-repeat;
+}
+.dots {
+  width: 88px;
+  height: 88px;
+  background-image: radial-gradient(#111 2px, transparent 2.4px);
+  background-size: 14px 14px;
+  opacity: 0.18;
+  right: 10px;
+  bottom: 10px;
+}
+.clover {
+  width: 70px;
+  height: 70px;
+  right: 14px;
+  bottom: 10px;
+  background-image: radial-gradient(#5dcf6a 1.6px, transparent 1.8px);
+  background-size: 10px 10px;
+}
+.banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+.error {
+  color: #ffb4ab;
+  font-size: 13px;
+}
+.tile.light .error { color: #b42318; }
+.hint { font-size: 12px; opacity: 0.7; }
+
+@media (max-width: 900px) {
+  .mosaic { grid-template-columns: repeat(6, 1fr); }
+  .span-3, .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 6; }
+}
