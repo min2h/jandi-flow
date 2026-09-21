@@ -42,11 +42,16 @@ docker compose up --build
 
 ## 사용 순서
 
-1. GitHub에서 PAT 발급
-2. 픽셀 화면의 로그인 칸에 붙여넣기 (채팅/README에 붙이지 않기)
-3. 새 레포 생성, 또는 기존 레포 `https://github.com/owner/repo` 연결
-4. 스케줄(고정/랜덤), 커밋 메시지(고정/랜덤), 빈 커밋 또는 `.janfi/garden.log` 저장
-5. 서버를 켜 둔 채로 두기. `지금 심기`로 바로 확인 가능
+터미널 `git login` / `gh auth` 는 필요 없습니다. **앱 화면의 PAT 로그인이 깃허브 로그인**입니다.
+
+1. 브라우저에서 GitHub 로그인
+2. Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token
+3. 권한에서 **`repo`** 체크 후 생성. 화면에 나온 `ghp_...` 복사
+4. janfi-flow 화면 로그인 칸에 붙여넣고 **로그인** (채팅에 붙이지 않기)
+5. 새 레포 생성, 또는 기존 레포 HTTPS URL 연결
+6. 스케줄/메시지 저장. `지금 심기`로 바로 commit / push 확인
+
+앱이 저장한 PAT로 `git commit` 과 `git push` 를 대신 실행합니다.
 
 ### private 테스트 레포
 

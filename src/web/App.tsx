@@ -145,11 +145,14 @@ export function App() {
             <div className="tile-head">
               <PixelArt name="key" scale={3} />
               <div>
-                <div className="kicker">GITHUB 로그인</div>
-                <h2>PAT로 들어오세요</h2>
+                <div className="kicker">깃허브 로그인</div>
+                <h2>여기서 로그인하면 됩니다</h2>
               </div>
             </div>
-            <p>토큰은 이 PC의 data 폴더에만 암호화되어 저장되고, git에는 올라가지 않습니다.</p>
+            <p>
+              터미널에서 git login을 따로 할 필요 없습니다. GitHub 사이트에서 PAT를 만든 뒤 아래 칸에 넣고 로그인하면,
+              앱이 그 계정으로 commit / push 합니다.
+            </p>
             <div className="stack">
               <input
                 type="password"
@@ -177,7 +180,10 @@ export function App() {
                   {error}
                 </div>
               )}
-              <div className="hint">Classic PAT는 repo 권한. public만 쓸 경우 public_repo 도 가능합니다.</div>
+              <div className="hint">
+                PAT 만드는 곳: GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) →
+                Generate. 권한은 repo 체크. 나온 ghp_ 값을 여기만 붙여넣기.
+              </div>
             </div>
           </section>
           <section className="tile white span-5 tall deco-tile">
