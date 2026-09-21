@@ -36,6 +36,13 @@ function resolveStorePath(dataDir: string): string {
 try {
   const secret = ensureSecret();
   const port = Number(process.env.PORT || 8787);
+  const host = (process.env.HOST || "127.0.0.1").trim() || "127.0.0.1";
+  const uiUser = (process.env.JANDI_UI_USER || "").trim();
+  const uiPass = process.env.JANDI_UI_PASS || "";
+  const uiAuth = uiUser && uiPass ? { user: uiUser, pass: uiPass } : undefined;
+  if (host !== "127.0.0.1" && host !== "::1" && !uiAuth) {
+    throw new Error("HOST가 로컬이 아니면 JANDI_UI_USER / JANDI_UI_PASS 가 필요합니다");
+  }
   const dataDir = process.env.JANDI_DATA_DIR || process.env.JANFI_DATA_DIR
     ? path.resolve((process.env.JANDI_DATA_DIR || process.env.JANFI_DATA_DIR) as string)
     : path.join(root, "data");
@@ -49,13 +56,14 @@ try {
     github: createGithubApi(),
     git: createGitOps(path.join(dataDir, "repos")),
     secret,
-    webDir: fs.existsSync(webDir) ? webDir : undefined
+    webDir: fs.existsSync(webDir) ? webDir : undefined,
+    uiAuth
   });
 
   const scheduler = startScheduler(db, runAll);
 
-  const server = app.listen(port, () => {
-    console.log(`jandi-flow listening on http://127.0.0.1:${port}`);
+  const server = app.listen(port, host, () => {
+    console.log(`jandi-flow listening on http://${host}:${port}`);
   });
 
   const shutdown = () => {

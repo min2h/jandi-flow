@@ -68,16 +68,37 @@ function makeGit(plantImpl?: GitOps["plant"]): GitOps {
   };
 }
 
-async function setup(github = makeGithub(), git = makeGit()) {
+async function setup(github = makeGithub(), git = makeGit(), uiAuth?: { user: string; pass: string }) {
   const dir = mkdtempSync(path.join(tmpdir(), "jandi-"));
   const db = await openDb(path.join(dir, "jandi.sqlite"));
-  const { app, runAll } = createApp({ db, github, git, secret: SECRET });
+  const { app, runAll } = createApp({ db, github, git, secret: SECRET, uiAuth });
   return { app, db, runAll };
 }
 
 async function login(app: ReturnType<typeof createApp>["app"]) {
   await request(app).post("/api/auth/login").send({ token: "good-token" }).expect(200);
 }
+
+describe("ui gate", () => {
+  it("blocks the dashboard API without basic auth", async () => {
+    const { app } = await setup(makeGithub(), makeGit(), { user: "garden", pass: "gate" });
+    await request(app).get("/api/settings").expect(401);
+  });
+
+  it("lets health through without basic auth", async () => {
+    const { app } = await setup(makeGithub(), makeGit(), { user: "garden", pass: "gate" });
+    const res = await request(app).get("/api/health").expect(200);
+    expect(res.body.name).toBe("jandi-flow");
+  });
+
+  it("accepts the UI password then PAT login", async () => {
+    const { app } = await setup(makeGithub(), makeGit(), { user: "garden", pass: "gate" });
+    const auth = { user: "garden", pass: "gate" };
+    await request(app).post("/api/auth/login").auth(auth.user, auth.pass).send({ token: "good-token" }).expect(200);
+    const me = await request(app).get("/api/auth/me").auth(auth.user, auth.pass).expect(200);
+    expect(me.body.login).toBe("min2h");
+  });
+});
 
 describe("auth", () => {
   it("accepts a valid PAT and never returns the token", async () => {

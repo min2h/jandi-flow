@@ -173,16 +173,40 @@ npm run dev
 
 브라우저에서 [http://127.0.0.1:5173](http://127.0.0.1:5173) 을 엽니다. 서버 API는 `8787`입니다.
 
-`.env`의 `JANDI_SECRET`은 비워 두면 첫 실행 때 자동 생성됩니다. **이 값과 PAT는 git에 올리지 마세요.**
+`.env`의 `JANDI_SECRET`은 비워 두면 첫 실행 때 자동 생성됩니다. **이 값과 PAT·UI 비밀번호는 git에 올리지 마세요.**
 
-Docker:
+Docker (이 PC에서만 볼 때):
 
 ```bash
 copy .env.example .env
-docker compose up --build
+docker compose up --build -d
 ```
 
-이후 [http://127.0.0.1:8787](http://127.0.0.1:8787)
+이후 [http://127.0.0.1:8787](http://127.0.0.1:8787). Docker는 컨테이너 안에서 `0.0.0.0`으로 열리므로 `.env`에 `JANDI_UI_USER` / `JANDI_UI_PASS` 가 있어야 뜹니다.
+
+## 서버에 항상 켜 두기
+
+PC를 꺼도 스케줄을 돌리려면 VPS에서 프로세스를 항상 살립니다. 이미 Deskly가 [https://158.247.202.85.sslip.io/](https://158.247.202.85.sslip.io/) 루트를 쓰면 **루트는 그대로** 두고, UI만 서브도메인으로 엽니다.
+
+`https://jandi.158.247.202.85.sslip.io/`
+
+앱은 `127.0.0.1:8787`에만 붙고, nginx가 그 주소만 밖으로 엽니다. 브라우저에 먼저 **UI 비밀번호**가 뜨고, 그다음 PAT 로그인을 합니다.
+
+```bash
+sudo mkdir -p /opt/jandi-flow
+sudo git clone https://github.com/min2h/jandi-flow.git /opt/jandi-flow
+cd /opt/jandi-flow
+sudo cp .env.example .env
+# .env 에 JANDI_UI_USER / JANDI_UI_PASS 를 채운다. PAT는 넣지 않는다.
+sudo docker compose up --build -d
+sudo cp deploy/jandi.sslip.io.conf /etc/nginx/sites-available/jandi-flow
+sudo ln -sf /etc/nginx/sites-available/jandi-flow /etc/nginx/sites-enabled/jandi-flow
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+HTTPS가 필요하면 Deskly와 같이 certbot으로 `jandi.158.247.202.85.sslip.io` 인증서를 받습니다. Docker 없이 systemd를 쓰려면 `deploy/jandi-flow.service` 를 `/etc/systemd/system/` 에 복사하고 `jandi` 계정을 만든 뒤 `npm run build && sudo systemctl enable --now jandi-flow` 하면 됩니다.
+
+처음 PAT 로그인은 그 서브도메인 UI에서 한 번만 하면 됩니다. 이후는 서버가 매일 심습니다.
 
 ## 사용 순서
 
@@ -223,7 +247,7 @@ docker compose up --build
 
 `.gitignore`가 막습니다.
 
-- `.env` (실제 `JANDI_SECRET`)
+- `.env` (실제 `JANDI_SECRET`, `JANDI_UI_PASS`)
 - `data/` (DB, 암호화된 PAT, 로컬 클론)
 - `*.pem` / `*.key`
 - `node_modules/`
@@ -232,7 +256,7 @@ docker compose up --build
 
 ## 주의
 
-- 이 PC가 켜져 있고 `npm run dev` 또는 `docker compose up`이 살아 있어야 매일 심깁니다.
+- 매일 심히려면 이 PC의 `npm run dev` / `docker compose up -d`, 또는 VPS의 jandi-flow 컨테이너가 살아 있어야 합니다.
 - 기여 그래프에  verd려면 커밋 이메일이 GitHub 계정과 맞아야 합니다. 공개 이메일이 없으면 `로그인@users.noreply.github.com`을 씁니다.
 - 잔디 커밋은 앱이 연결한 **대상 레포**로만 갑니다. 이 제품 저장소(`jandi-flow`)에 더미 커밋을 섞지 않습니다.
 - PAT를 이슈/README/채팅에 붙여 넣지 마세요.

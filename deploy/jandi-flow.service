@@ -1,0 +1,20 @@
+[Unit]
+Description=jandi-flow garden scheduler
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/jandi-flow
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=8787
+Environment=TZ=Asia/Seoul
+EnvironmentFile=/opt/jandi-flow/.env
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+User=jandi
+Group=jandi
+
+[Install]
+WantedBy=multi-user.target

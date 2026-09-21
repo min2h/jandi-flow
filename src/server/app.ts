@@ -8,6 +8,7 @@ import { parseGithubHttpsUrl } from "../lib/github-url.js";
 import { resolvePlantPlan, todayKey } from "../lib/burn.js";
 import { pickCommitMessage } from "../lib/messages.js";
 import { parseHm } from "../lib/schedule.js";
+import { checkBasicAuth, type UiAuth } from "../lib/basic-auth.js";
 import type { GithubUser, RepoInfo, RepoStatus, Settings } from "../lib/types.js";
 import { getSettings, grassDays, listLogs, listRepos, saveSettings } from "./db.js";
 import { GithubHttpError, type GithubApi } from "./github.js";
@@ -19,6 +20,7 @@ export interface AppDeps {
   git: GitOps;
   secret: string;
   webDir?: string;
+  uiAuth?: UiAuth;
 }
 
 const settingsSchema = z.object({
@@ -51,6 +53,12 @@ export function createApp(deps: AppDeps) {
   const app = express();
   app.use(cors());
   app.use(express.json({ limit: "1mb" }));
+  app.use((req, res, next) => {
+    if (!deps.uiAuth || req.path === "/api/health") return next();
+    if (checkBasicAuth(req.headers.authorization, deps.uiAuth)) return next();
+    res.setHeader("WWW-Authenticate", "Basic realm=\"jandi-flow\"");
+    return res.status(401).send("UI 비밀번호가 필요합니다");
+  });
 
   const getSession = () =>
     deps.db.prepare("SELECT * FROM session WHERE id = 1").get() as

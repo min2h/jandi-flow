@@ -2,9 +2,13 @@ services:
   jandi-flow:
     build: .
     ports:
-      - "8787:8787"
+      - "127.0.0.1:8787:8787"
     env_file:
       - .env
+    environment:
+      TZ: Asia/Seoul
+      HOST: 0.0.0.0
+      PORT: "8787"
     volumes:
       - ./data:/app/data
     restart: unless-stopped
