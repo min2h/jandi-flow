@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, type JobLog, type Me, type Repo, type Settings } from "./api";
+import { PixelArt } from "./pixels";
 
 const PREVIEW = new URLSearchParams(window.location.search).get("preview") === "1";
 
 const PREVIEW_ME: Me = {
   login: "min2h",
   name: "janfi",
-  avatarUrl: "https://avatars.githubusercontent.com/u/9919?s=80",
+  avatarUrl: "",
   email: "min2h@users.noreply.github.com"
 };
 
@@ -120,9 +121,12 @@ export function App() {
   return (
     <div className="app">
       <div className="banner">
-        <div>
-          <div className="kicker">LOCAL PIXEL GARDEN</div>
-          <h1 className="pixel-title">janfi-flow</h1>
+        <div className="brand">
+          <PixelArt name="sprout" scale={3} />
+          <div>
+            <div className="kicker">LOCAL PIXEL GARDEN</div>
+            <h1 className="pixel-title">janfi-flow</h1>
+          </div>
         </div>
         <div className="hint">서버를 켜 두면 매일 잔디가 심어집니다</div>
       </div>
@@ -130,8 +134,13 @@ export function App() {
       {!me ? (
         <div className="mosaic">
           <section className="tile light span-7 tall">
-            <div className="kicker">GITHUB 로그인</div>
-            <h2>PAT로 들어오세요</h2>
+            <div className="tile-head">
+              <PixelArt name="key" scale={3} />
+              <div>
+                <div className="kicker">GITHUB 로그인</div>
+                <h2>PAT로 들어오세요</h2>
+              </div>
+            </div>
             <p>토큰은 이 PC의 data 폴더에만 암호화되어 저장되고, git에는 올라가지 않습니다.</p>
             <div className="stack">
               <input
@@ -151,40 +160,68 @@ export function App() {
                   })
                 }
               >
+                <PixelArt name="check" scale={2} />
                 로그인
               </button>
-              {error && <div className="error">{error}</div>}
+              {error && (
+                <div className="error">
+                  <PixelArt name="warn" scale={2} />
+                  {error}
+                </div>
+              )}
               <div className="hint">Classic PAT는 repo 권한. public만 쓸 경우 public_repo 도 가능합니다.</div>
             </div>
           </section>
-          <section className="tile dark span-5 tall">
+          <section className="tile white span-5 tall deco-tile">
+            <PixelArt name="ghost" scale={6} />
             <div className="kicker">PIXEL</div>
-            <h2>도트 잔디밭</h2>
-            <p>로그인 후 레포를 만들거나 HTTPS URL로 연결하면, 기존 코드는 건드리지 않고 빈 커밋만 올라갑니다.</p>
-            <div className="sprite ghost" />
+            <h2>유령 한 마리</h2>
           </section>
-          <section className="tile peach span-4">
-            <div className="kicker">DECOR</div>
-            <h2>사과 한 입</h2>
-            <div className="sprite apple" />
+          <section className="tile peach span-3 deco-tile">
+            <PixelArt name="apple" scale={5} />
+            <div className="kicker">FRUIT</div>
+            <h2>사과</h2>
           </section>
-          <section className="tile dark span-4">
-            <div className="sprite dots" />
-            <div className="kicker">PATTERN</div>
-            <h2>점점점</h2>
-          </section>
-          <section className="tile mint span-4">
-            <div className="sprite clover" />
+          <section className="tile mint span-3 deco-tile">
+            <PixelArt name="sprout" scale={5} />
             <div className="kicker">GARDEN</div>
+            <h2>새싹</h2>
+          </section>
+          <section className="tile dark span-3 deco-tile">
+            <PixelArt name="pumpkin" scale={5} />
+            <div className="kicker">FALL</div>
+            <h2>호박</h2>
+          </section>
+          <section className="tile sky span-3 deco-tile">
+            <PixelArt name="bunny" scale={5} />
+            <div className="kicker">FRIEND</div>
+            <h2>토끼</h2>
+          </section>
+          <section className="tile light span-4 deco-tile">
+            <PixelArt name="kid" scale={5} />
+            <div className="kicker">CREW</div>
+            <h2>정원사</h2>
+          </section>
+          <section className="tile mint span-4 deco-tile">
+            <PixelArt name="clover" scale={5} />
+            <div className="kicker">LUCK</div>
             <h2>클로버</h2>
+          </section>
+          <section className="tile dark span-4 deco-tile">
+            <PixelArt name="moon" scale={5} />
+            <div className="kicker">NIGHT</div>
+            <h2>달</h2>
           </section>
         </div>
       ) : (
         <div className="mosaic">
           <section className="tile light span-4">
-            <div className="kicker">ACCOUNT</div>
+            <div className="tile-head">
+              <PixelArt name="kid" scale={3} />
+              <div className="kicker">ACCOUNT</div>
+            </div>
             <div className="user-chip">
-              <img src={me.avatarUrl} alt="" />
+              {me.avatarUrl ? <img src={me.avatarUrl} alt="" /> : <PixelArt name="frog" scale={3} />}
               <div>
                 <h2>{me.login}</h2>
                 <div className="hint">{me.email}</div>
@@ -200,25 +237,38 @@ export function App() {
                   })
                 }
               >
+                <PixelArt name="ghost" scale={2} />
                 로그아웃
               </button>
             </div>
           </section>
 
           <section className="tile dark span-8 taller">
-            <div className="kicker">잔디 미리보기</div>
-            <h2>로컬에서 성공한 날만 초록</h2>
+            <div className="tile-head">
+              <PixelArt name="leaf" scale={3} />
+              <div>
+                <div className="kicker">잔디 미리보기</div>
+                <h2>로컬에서 성공한 날만 초록</h2>
+              </div>
+            </div>
             <div className="grass" aria-label="grass">
               {cells.map((cls, i) => (
                 <div key={i} className={`cell ${cls}`} />
               ))}
             </div>
-            <div className="sprite clover" />
+            <div className="deco-corner">
+              <PixelArt name="clover" scale={3} />
+            </div>
           </section>
 
           <section className="tile light span-6 tall">
-            <div className="kicker">새 레포 생성</div>
-            <h2>잔디 전용 밭 만들기</h2>
+            <div className="tile-head">
+              <PixelArt name="repo" scale={3} />
+              <div>
+                <div className="kicker">새 레포 생성</div>
+                <h2>잔디 전용 밭 만들기</h2>
+              </div>
+            </div>
             <div className="stack">
               <input value={createName} onChange={(e) => setCreateName(e.target.value)} placeholder="레포 이름" />
               <select value={createVis} onChange={(e) => setCreateVis(e.target.value as "public" | "private")}>
@@ -235,14 +285,20 @@ export function App() {
                   })
                 }
               >
+                <PixelArt name="sprout" scale={2} />
                 생성하고 연결
               </button>
             </div>
           </section>
 
           <section className="tile peach span-6 tall">
-            <div className="kicker">기존 레포 연결</div>
-            <h2>HTTPS URL 검증</h2>
+            <div className="tile-head">
+              <PixelArt name="link" scale={3} />
+              <div>
+                <div className="kicker">기존 레포 연결</div>
+                <h2>HTTPS URL 검증</h2>
+              </div>
+            </div>
             <div className="stack">
               <input
                 value={connectUrl}
@@ -259,6 +315,7 @@ export function App() {
                   })
                 }
               >
+                <PixelArt name="check" scale={2} />
                 연결 확인
               </button>
               <div className="hint">public/private 모두 가능. 삭제되거나 키가 바뀌면 상태가 끊깁니다.</div>
@@ -266,26 +323,35 @@ export function App() {
           </section>
 
           <section className="tile dark span-6 tall">
-            <div className="kicker">연결된 레포</div>
+            <div className="tile-head">
+              <PixelArt name="pot" scale={3} />
+              <div className="kicker">연결된 레포</div>
+            </div>
             <div className="repo-list">
               {repos.length === 0 && <p>아직 연결된 밭이 없습니다.</p>}
               {repos.map((repo) => (
                 <div className="repo-item" key={repo.id}>
-                  <div>
-                    <strong>
-                      {repo.owner}/{repo.name}
-                    </strong>
-                    <div className={`status-pill status-${repo.status}`}>{STATUS_LABEL[repo.status]}</div>
-                    {repo.lastError && <div className="error">{repo.lastError}</div>}
+                  <div className="repo-meta">
+                    <PixelArt name={repo.status === "connected" ? "check" : "warn"} scale={2} />
+                    <div>
+                      <strong>
+                        {repo.owner}/{repo.name}
+                      </strong>
+                      <div className={`status-pill status-${repo.status}`}>{STATUS_LABEL[repo.status]}</div>
+                      {repo.lastError && <div className="error">{repo.lastError}</div>}
+                    </div>
                   </div>
                   <div className="row">
                     <button className="ghost" disabled={busy} onClick={() => wrap(async () => { await api.healthRepo(repo.id); await load(false); })}>
+                      <PixelArt name="key" scale={2} />
                       검증
                     </button>
                     <button className="ok" disabled={busy} onClick={() => wrap(async () => { await api.runNow(repo.id); await load(false); })}>
+                      <PixelArt name="sprout" scale={2} />
                       지금 심기
                     </button>
                     <button className="warn" disabled={busy} onClick={() => wrap(async () => { await api.deleteRepo(repo.id); await load(false); })}>
+                      <PixelArt name="warn" scale={2} />
                       해제
                     </button>
                   </div>
@@ -296,7 +362,10 @@ export function App() {
 
           {settings && (
             <section className="tile light span-6 tall">
-              <div className="kicker">스케줄 / 메시지</div>
+              <div className="tile-head">
+                <PixelArt name="clock" scale={3} />
+                <div className="kicker">스케줄 / 메시지</div>
+              </div>
               <div className="stack">
                 <select
                   value={settings.scheduleMode}
@@ -360,6 +429,7 @@ export function App() {
                   disabled={busy}
                   onClick={() => wrap(async () => { setSettings(await api.saveSettings(settings)); })}
                 >
+                  <PixelArt name="star" scale={2} />
                   설정 저장
                 </button>
               </div>
@@ -367,25 +437,39 @@ export function App() {
           )}
 
           <section className="tile mint span-7">
-            <div className="kicker">로그</div>
+            <div className="tile-head">
+              <PixelArt name="envelope" scale={3} />
+              <div className="kicker">로그</div>
+            </div>
             <div className="logs">
               {logs.length === 0 && <p>아직 심은 기록이 없습니다.</p>}
               {logs.map((log) => (
                 <div key={log.id} className={log.ok ? "log-ok" : "log-fail"}>
+                  <PixelArt name={log.ok ? "check" : "warn"} scale={2} />
                   {log.createdAt.slice(0, 16).replace("T", " ")} · {log.message}
                 </div>
               ))}
             </div>
           </section>
           <section className="tile dark span-5">
-            <div className="sprite ghost" />
-            <div className="kicker">TIP</div>
-            <h2>기존 기능은 그대로</h2>
+            <div className="tile-head">
+              <PixelArt name="ghost" scale={3} />
+              <div>
+                <div className="kicker">TIP</div>
+                <h2>기존 기능은 그대로</h2>
+              </div>
+            </div>
             <p>빈 커밋이 기본입니다. 대상 레포 소스는 수정하지 않습니다.</p>
             <button disabled={busy} onClick={() => wrap(async () => { await api.runNow(); await load(false); })}>
+              <PixelArt name="leaf" scale={2} />
               연결된 모든 레포 지금 심기
             </button>
-            {error && <div className="error" style={{ marginTop: 8 }}>{error}</div>}
+            {error && (
+              <div className="error" style={{ marginTop: 8 }}>
+                <PixelArt name="warn" scale={2} />
+                {error}
+              </div>
+            )}
           </section>
         </div>
       )}

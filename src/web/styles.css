@@ -44,11 +44,28 @@ body::before {
   padding: 28px 20px 64px;
 }
 
+.pixel-art {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  flex: 0 0 auto;
+  display: block;
+}
+
 .pixel-title {
   font-family: "Press Start 2P", "Gaegu", sans-serif;
   letter-spacing: 1px;
   line-height: 1.6;
 }
+
+.brand, .tile-head, .repo-meta, .error, button, .logs > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand { align-items: flex-end; }
+.tile-head { margin-bottom: 10px; }
+.logs > div { margin-bottom: 6px; }
 
 h2, .kicker {
   font-family: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
@@ -83,6 +100,24 @@ h2, .kicker {
 .tile.mint { background: #d8f5c8; color: var(--ink); }
 .tile.peach { background: #ffd7b8; color: var(--ink); }
 .tile.sky { background: #d7ecff; color: var(--ink); }
+.tile.white { background: #fffdf8; color: var(--ink); }
+
+.deco-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 200px;
+  gap: 8px;
+}
+.deco-tile .pixel-art { margin-bottom: 4px; }
+.deco-corner {
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  opacity: 0.9;
+}
 
 .span-3 { grid-column: span 3; }
 .span-4 { grid-column: span 4; }
@@ -129,7 +164,10 @@ button {
   border-radius: 10px;
   padding: 9px 12px;
   cursor: pointer;
-  image-rendering: pixelated;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 button.ghost {
   background: transparent;
@@ -192,55 +230,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .logs { max-height: 180px; overflow: auto; font-size: 12px; }
 .log-ok { color: #3d9e4a; }
 .log-fail { color: #e85d4c; }
-
-.sprite {
-  image-rendering: pixelated;
-  position: absolute;
-}
-.ghost {
-  width: 72px;
-  height: 88px;
-  right: 16px;
-  bottom: 12px;
-  background:
-    linear-gradient(#111 0 0) 16px 8px / 40px 8px,
-    linear-gradient(#111 0 0) 8px 16px / 56px 48px,
-    linear-gradient(#111 0 0) 16px 64px / 8px 16px,
-    linear-gradient(#111 0 0) 32px 64px / 8px 16px,
-    linear-gradient(#111 0 0) 48px 64px / 8px 16px,
-    linear-gradient(#fff 0 0) 16px 16px / 40px 40px,
-    linear-gradient(#111 0 0) 24px 28px / 8px 8px,
-    linear-gradient(#111 0 0) 44px 28px / 8px 8px;
-  background-repeat: no-repeat;
-}
-.apple {
-  width: 56px;
-  height: 56px;
-  right: 18px;
-  top: 22px;
-  background:
-    linear-gradient(#2f7a38 0 0) 24px 0 / 8px 10px,
-    linear-gradient(#e85d4c 0 0) 8px 12px / 40px 36px,
-    linear-gradient(#ff8a6b 0 0) 14px 18px / 12px 8px;
-  background-repeat: no-repeat;
-}
-.dots {
-  width: 88px;
-  height: 88px;
-  background-image: radial-gradient(#111 2px, transparent 2.4px);
-  background-size: 14px 14px;
-  opacity: 0.18;
-  right: 10px;
-  bottom: 10px;
-}
-.clover {
-  width: 70px;
-  height: 70px;
-  right: 14px;
-  bottom: 10px;
-  background-image: radial-gradient(#5dcf6a 1.6px, transparent 1.8px);
-  background-size: 10px 10px;
-}
 .banner {
   display: flex;
   justify-content: space-between;
