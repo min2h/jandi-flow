@@ -1,0 +1,4 @@
+jandi.158.247.202.85.sslip.io {
+	encode gzip
+	reverse_proxy jandi-flow:8787
+}

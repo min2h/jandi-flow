@@ -1,0 +1,22 @@
+services:
+  jandi-flow:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: jandi-flow
+    env_file:
+      - ../.env
+    environment:
+      TZ: Asia/Seoul
+      HOST: 0.0.0.0
+      PORT: "8787"
+    volumes:
+      - ../data:/app/data
+    restart: unless-stopped
+    networks:
+      - home-auto
+
+networks:
+  home-auto:
+    external: true
+    name: home-auto-pipeline_default
