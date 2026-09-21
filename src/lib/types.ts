@@ -74,8 +74,8 @@ export const DEFAULT_SETTINGS: Settings = {
   randomTo: "22:00",
   timezone: "Asia/Seoul",
   messageMode: "random",
-  message: "janfi-flow: 오늘도 잔디 한 칸",
-  commitMode: "empty",
+  message: "jandi-flow: 오늘도 잔디 한 칸",
+  commitMode: "log",
   commitsPerDay: 1,
   commitsPerDayMode: "fixed",
   schedulerEnabled: true,
@@ -86,7 +86,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export const RANDOM_MESSAGES = [
-  "janfi-flow: 잔디 한 칸",
+  "jandi-flow: 잔디 한 칸",
   "오늘도 심었다",
   "pixel sprout",
   "garden tick",

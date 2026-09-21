@@ -87,7 +87,7 @@ export function createGithubApi(): GithubApi {
         const { data } = await octokit.repos.createForAuthenticatedUser({
           name: input.name,
           private: input.visibility === "private",
-          description: input.description || "janfi-flow garden",
+          description: input.description || "jandi-flow garden",
           auto_init: true
         });
         return toRepo(data);

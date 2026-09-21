@@ -69,8 +69,8 @@ function makeGit(plantImpl?: GitOps["plant"]): GitOps {
 }
 
 async function setup(github = makeGithub(), git = makeGit()) {
-  const dir = mkdtempSync(path.join(tmpdir(), "janfi-"));
-  const db = await openDb(path.join(dir, "janfi.sqlite"));
+  const dir = mkdtempSync(path.join(tmpdir(), "jandi-"));
+  const db = await openDb(path.join(dir, "jandi.sqlite"));
   const { app, runAll } = createApp({ db, github, git, secret: SECRET });
   return { app, db, runAll };
 }
@@ -238,7 +238,7 @@ describe("session storage", () => {
     const { db } = await setup();
     const sample = encryptSecret("good-token", SECRET);
     expect(sample).not.toContain("good-token");
-    expect(sample.startsWith("jfv1.")).toBe(true);
+    expect(sample.startsWith("jdv1.")).toBe(true);
     db.close();
   });
 });

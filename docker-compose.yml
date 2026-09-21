@@ -1,5 +1,5 @@
 services:
-  janfi-flow:
+  jandi-flow:
     build: .
     ports:
       - "8787:8787"

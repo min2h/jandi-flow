@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { simpleGit } from "simple-git";
+import { appendGardenJournal, GARDEN_RELATIVE_PATH } from "../lib/garden-journal.js";
 import { statusFromGitError } from "../lib/github-url.js";
 import type { CommitMode, GithubUser } from "../lib/types.js";
 
@@ -57,15 +58,15 @@ export function createGitOps(reposRoot: string): GitOps {
         }
         await repo.pull("origin", target).catch(() => undefined);
 
-        if (mode === "log") {
-          const gardenDir = path.join(dir, ".janfi");
-          fs.mkdirSync(gardenDir, { recursive: true });
-          const logPath = path.join(gardenDir, "garden.log");
-          fs.appendFileSync(logPath, `${new Date().toISOString()} ${message}\n`, "utf8");
-          await repo.add(".janfi/garden.log");
-          await repo.commit(message);
-        } else {
+        if (mode === "empty") {
           await repo.commit(message, ["--allow-empty"]);
+        } else {
+          const gardenPath = path.join(dir, GARDEN_RELATIVE_PATH);
+          fs.mkdirSync(path.dirname(gardenPath), { recursive: true });
+          const previous = fs.existsSync(gardenPath) ? fs.readFileSync(gardenPath, "utf8") : "";
+          fs.writeFileSync(gardenPath, appendGardenJournal(previous, new Date(), message), "utf8");
+          await repo.add(GARDEN_RELATIVE_PATH);
+          await repo.commit(message);
         }
         await repo.push("origin", target);
       } catch (error) {

@@ -14,8 +14,9 @@ describe("secret files stay out of git", () => {
 
   it("example env has no real secret", () => {
     const example = readFileSync(".env.example", "utf8");
-    expect(example).toContain("JANFI_SECRET=");
-    expect(example).not.toMatch(/JANFI_SECRET=.{8,}/);
+    expect(example).toMatch(/JANDI_SECRET=/);
+    expect(example).not.toMatch(/JANDI_SECRET=.{8,}/);
+    expect(example).not.toContain("JANFI_SECRET");
     expect(example).not.toContain("ghp_");
   });
 });

@@ -7,8 +7,8 @@ import { startScheduler } from "../src/server/scheduler.js";
 
 describe("scheduler", () => {
   it("runs at the fixed time once", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "janfi-sched-"));
-    const db = await openDb(path.join(dir, "janfi.sqlite"));
+    const dir = mkdtempSync(path.join(tmpdir(), "jandi-sched-"));
+    const db = await openDb(path.join(dir, "jandi.sqlite"));
     const settings = getSettings(db);
     saveSettings(db, { ...settings, scheduleMode: "fixed", fixedTime: "09:00", timezone: "Asia/Seoul", schedulerEnabled: true });
     let runs = 0;
@@ -22,8 +22,8 @@ describe("scheduler", () => {
   });
 
   it("does not run when scheduler is disabled", async () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "janfi-sched-"));
-    const db = await openDb(path.join(dir, "janfi.sqlite"));
+    const dir = mkdtempSync(path.join(tmpdir(), "jandi-sched-"));
+    const db = await openDb(path.join(dir, "jandi.sqlite"));
     const settings = getSettings(db);
     saveSettings(db, { ...settings, schedulerEnabled: false, fixedTime: "09:00", timezone: "Asia/Seoul" });
     let runs = 0;

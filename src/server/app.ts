@@ -210,7 +210,7 @@ export function createApp(deps: AppDeps) {
   };
 
   app.get("/api/health", (_req, res) => {
-    res.json({ ok: true, name: "janfi-flow" });
+    res.json({ ok: true, name: "jandi-flow" });
   });
 
   app.post("/api/auth/login", async (req, res) => {

@@ -1,22 +1,23 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { api, type JobLog, type Me, type Repo, type Settings } from "./api";
+import { DecoBuddy, DecoTile } from "./deco";
 import { PixelArt } from "./pixels";
 
 const PREVIEW = new URLSearchParams(window.location.search).get("preview") === "1";
 
 const PREVIEW_ME: Me = {
-  login: "min2h",
-  name: "janfi",
+  login: "garden-user",
+  name: "jandi",
   avatarUrl: "",
-  email: "min2h@users.noreply.github.com"
+  email: "garden-user@users.noreply.github.com"
 };
 
 const PREVIEW_REPOS: Repo[] = [
   {
     id: 1,
-    repoHttpsUrl: "https://github.com/min2h/janfi-garden",
-    owner: "min2h",
-    name: "janfi-garden",
+    repoHttpsUrl: "https://github.com/username/repository",
+    owner: "username",
+    name: "repository",
     visibility: "public",
     defaultBranch: "main",
     status: "connected",
@@ -34,8 +35,8 @@ const PREVIEW_SETTINGS: Settings = {
   randomTo: "22:00",
   timezone: "Asia/Seoul",
   messageMode: "random",
-  message: "janfi-flow: 오늘도 잔디 한 칸",
-  commitMode: "empty",
+  message: "jandi-flow: 오늘도 잔디 한 칸",
+  commitMode: "log",
   commitsPerDay: 1,
   commitsPerDayMode: "fixed",
   schedulerEnabled: true,
@@ -51,6 +52,27 @@ const STATUS_LABEL: Record<Repo["status"], string> = {
   auth_invalid: "인증 실패",
   push_denied: "push 불가"
 };
+
+const ACTION_LABEL: Record<string, string> = {
+  login: "로그인하는 중",
+  logout: "로그아웃하는 중",
+  create: "레포를 만드는 중",
+  connect: "연결을 확인하는 중",
+  health: "레포를 검증하는 중",
+  plant: "잔디를 심는 중",
+  burn: "잔디를 불태우는 중",
+  delete: "연결을 해제하는 중",
+  save: "설정을 저장하는 중",
+  plantAll: "잔디를 심는 중"
+};
+
+function busyText(action: string) {
+  return ACTION_LABEL[action.split(":")[0]] || "처리 중";
+}
+
+function PixelSpinner() {
+  return <span className="pixel-spinner" aria-hidden />;
+}
 
 function grassCells(days: string[], burnDays: string[]): string[] {
   const light = new Set(days);
@@ -76,36 +98,42 @@ export function App() {
   const [grassBurn, setGrassBurn] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [createName, setCreateName] = useState("janfi-garden");
+  const [busyAction, setBusyAction] = useState("");
+  const [booted, setBooted] = useState(PREVIEW);
+  const [createName, setCreateName] = useState("garden");
   const [createVis, setCreateVis] = useState<"public" | "private">("public");
   const [connectUrl, setConnectUrl] = useState("");
 
   const load = async (withMe = true) => {
-    if (PREVIEW) {
-      setMe(PREVIEW_ME);
-      setRepos(PREVIEW_REPOS);
-      setSettings(PREVIEW_SETTINGS);
-      setLogs([
-        { id: 1, repoId: 1, ok: true, message: "min2h/janfi-garden 에 1회 심기 완료", createdAt: new Date().toISOString() }
-      ]);
-      setGrass([new Date().toISOString().slice(0, 10)]);
-      setGrassBurn([]);
-      return;
-    }
-    if (withMe) {
-      try {
-        setMe(await api.me());
-      } catch {
-        setMe(null);
+    try {
+      if (PREVIEW) {
+        setMe(PREVIEW_ME);
+        setRepos(PREVIEW_REPOS);
+        setSettings(PREVIEW_SETTINGS);
+        setLogs([
+          { id: 1, repoId: 1, ok: true, message: "username/repository 에 1회 심기 완료", createdAt: new Date().toISOString() }
+        ]);
+        setGrass([new Date().toISOString().slice(0, 10)]);
+        setGrassBurn([]);
         return;
       }
+      if (withMe) {
+        try {
+          setMe(await api.me());
+        } catch {
+          setMe(null);
+          return;
+        }
+      }
+      const [repoRes, settingRes, logRes] = await Promise.all([api.repos(), api.settings(), api.logs()]);
+      setRepos(repoRes.repos);
+      setSettings(settingRes);
+      setLogs(logRes.logs);
+      setGrass(logRes.grass);
+      setGrassBurn(logRes.grassBurn || []);
+    } finally {
+      setBooted(true);
     }
-    const [repoRes, settingRes, logRes] = await Promise.all([api.repos(), api.settings(), api.logs()]);
-    setRepos(repoRes.repos);
-    setSettings(settingRes);
-    setLogs(logRes.logs);
-    setGrass(logRes.grass);
-    setGrassBurn(logRes.grassBurn || []);
   };
 
   useEffect(() => {
@@ -114,8 +142,9 @@ export function App() {
 
   const cells = useMemo(() => grassCells(grass, grassBurn), [grass, grassBurn]);
 
-  const wrap = async (fn: () => Promise<void>) => {
+  const wrap = async (fn: () => Promise<void>, action = "") => {
     setBusy(true);
+    setBusyAction(action);
     setError("");
     try {
       await fn();
@@ -123,20 +152,53 @@ export function App() {
       setError(err instanceof Error ? err.message : "실패했습니다");
     } finally {
       setBusy(false);
+      setBusyAction("");
     }
   };
 
+  const actionIcon = (action: string, idle: ReactNode) =>
+    busy && busyAction === action ? <PixelSpinner /> : idle;
+
+  if (!booted) {
+    return (
+      <div className="boot" aria-busy="true">
+        <div className="boot-card">
+          <div className="boot-sprout">
+            <PixelArt name="sprout" scale={6} />
+          </div>
+          <h1 className="pixel-title">jandi-flow</h1>
+          <p>정원을 여는 중</p>
+          <div className="boot-rail" role="progressbar" aria-label="로딩">
+            <div className="boot-fill" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="app">
+    <div className="app" aria-busy={busy}>
+      <div className={`progress-rail ${busy ? "on" : ""}`} aria-hidden={!busy}>
+        <div className="progress-bar" />
+      </div>
       <div className="banner">
         <div className="brand">
           <PixelArt name="sprout" scale={3} />
           <div>
-            <div className="kicker">LOCAL PIXEL GARDEN</div>
-            <h1 className="pixel-title">janfi-flow</h1>
+            <div className="kicker">PIXEL GARDEN</div>
+            <h1 className="pixel-title">jandi-flow</h1>
           </div>
         </div>
-        <div className="hint">서버를 켜 두면 매일 잔디가 심어집니다</div>
+        <div className="banner-status">
+          {busy ? (
+            <div className="busy-chip">
+              <PixelSpinner />
+              {busyText(busyAction)}
+            </div>
+          ) : (
+            <div className="hint">서버를 켜 두면 매일 잔디가 심어집니다</div>
+          )}
+        </div>
       </div>
 
       {!me ? (
@@ -168,11 +230,11 @@ export function App() {
                     await api.login(token);
                     setToken("");
                     await load();
-                  })
+                  }, "login")
                 }
               >
-                <PixelArt name="check" scale={2} />
-                로그인
+                {actionIcon("login", <PixelArt name="check" scale={2} />)}
+                {busy && busyAction === "login" ? "로그인하는 중" : "로그인"}
               </button>
               {error && (
                 <div className="error">
@@ -186,61 +248,21 @@ export function App() {
               </div>
             </div>
           </section>
-          <section className="tile white span-5 tall deco-tile">
-            <PixelArt name="sprout" scale={6} />
-            <div className="kicker">매일</div>
-            <h2>연한 잔디</h2>
-            <p>기본값. 하루 1커밋으로 연한 초록칸이 생깁니다.</p>
-          </section>
-          <section className="tile mint span-3 deco-tile">
-            <PixelArt name="leaf" scale={5} />
-            <div className="kicker">선택</div>
-            <h2>불타는 잔디</h2>
-            <p>며칠마다 여러 커밋으로 진한 초록.</p>
-          </section>
-          <section className="tile peach span-3 deco-tile">
-            <PixelArt name="apple" scale={5} />
-            <div className="kicker">장식</div>
-            <h2>사과</h2>
-            <p>기능 버튼이 아닙니다.</p>
-          </section>
-          <section className="tile dark span-3 deco-tile">
-            <PixelArt name="moon" scale={5} />
-            <div className="kicker">장식</div>
-            <h2>달</h2>
-            <p>정원 분위기용 도트입니다.</p>
-          </section>
-          <section className="tile sky span-3 deco-tile">
-            <PixelArt name="bunny" scale={5} />
-            <div className="kicker">장식</div>
-            <h2>토끼</h2>
-            <p>픽셀 갤러리 타일입니다.</p>
-          </section>
-          <section className="tile light span-4 deco-tile">
-            <PixelArt name="kid" scale={5} />
-            <div className="kicker">장식</div>
-            <h2>정원사</h2>
-            <p>로그인 후 잔디를 관리합니다.</p>
-          </section>
-          <section className="tile mint span-4 deco-tile">
-            <PixelArt name="ghost" scale={5} />
-            <div className="kicker">장식</div>
-            <h2>유령</h2>
-            <p>빈 커밋도 잔디는 자랍니다.</p>
-          </section>
-          <section className="tile dark span-4 deco-tile">
-            <PixelArt name="pumpkin" scale={5} />
-            <div className="kicker">장식</div>
-            <h2>호박</h2>
-            <p>클릭해도 설정이 바뀌지 않습니다.</p>
-          </section>
+          <DecoTile sprite="sprout" tone="white" span="span-5 tall" scale={6} kicker="매일" title="연한 잔디" tip="하루 한 칸, 연한 초록" />
+          <DecoTile sprite="leaf" tone="mint" span="span-3" kicker="선택" title="불타는 잔디" tip="며칠마다 진한 초록" />
+          <DecoTile sprite="apple" tone="peach" span="span-3" kicker="장식" title="사과" tip="잘 익은 한 알" />
+          <DecoTile sprite="moon" tone="dark" span="span-3" kicker="장식" title="달" tip="정원 위 초승달" />
+          <DecoTile sprite="bunny" tone="sky" span="span-3" kicker="장식" title="토끼" tip="잔디밭 토끼" />
+          <DecoTile sprite="kid" tone="light" span="span-4" kicker="장식" title="정원사" tip="오늘도 물 주는 중" />
+          <DecoTile sprite="ghost" tone="mint" span="span-4" kicker="장식" title="유령" tip="밤의 손님" />
+          <DecoTile sprite="pumpkin" tone="dark" span="span-4" kicker="장식" title="호박" tip="가을 호박" />
         </div>
       ) : (
         <div className="mosaic">
           <section className="tile light span-4">
             <div className="tile-head">
               <PixelArt name="kid" scale={3} />
-              <div className="kicker">ACCOUNT</div>
+              <div className="kicker">계정</div>
             </div>
             <div className="user-chip">
               {me.avatarUrl ? <img src={me.avatarUrl} alt="" /> : <PixelArt name="frog" scale={3} />}
@@ -252,15 +274,16 @@ export function App() {
             <div className="row" style={{ marginTop: 12 }}>
               <button
                 className="ghost"
+                disabled={busy}
                 onClick={() =>
                   wrap(async () => {
                     await api.logout();
                     setMe(null);
-                  })
+                  }, "logout")
                 }
               >
-                <PixelArt name="ghost" scale={2} />
-                로그아웃
+                {actionIcon("logout", <PixelArt name="ghost" scale={2} />)}
+                {busy && busyAction === "logout" ? "로그아웃하는 중" : "로그아웃"}
               </button>
             </div>
           </section>
@@ -270,7 +293,7 @@ export function App() {
               <PixelArt name="leaf" scale={3} />
               <div>
                 <div className="kicker">잔디 미리보기</div>
-                <h2>로컬에서 성공한 날만 초록</h2>
+                <h2>심기에 성공한 날만 초록</h2>
               </div>
             </div>
             <div className="grass" aria-label="grass">
@@ -279,7 +302,21 @@ export function App() {
               ))}
             </div>
             <div className="deco-corner">
-              <PixelArt name="clover" scale={3} />
+              <DecoBuddy name="clover" label="클로버" tip="네잎클로버" />
+            </div>
+          </section>
+
+          <section className="tile light span-12 deco-bar">
+            <div className="kicker">정원 친구들</div>
+            <div className="deco-row">
+              <DecoBuddy name="apple" label="사과" tip="잘 익은 한 알" />
+              <DecoBuddy name="moon" label="달" tip="정원 위 초승달" />
+              <DecoBuddy name="bunny" label="토끼" tip="잔디밭 토끼" />
+              <DecoBuddy name="ghost" label="유령" tip="밤의 손님" />
+              <DecoBuddy name="pumpkin" label="호박" tip="가을 호박" />
+              <DecoBuddy name="sprout" label="새싹" tip="연한 새싹" />
+              <DecoBuddy name="leaf" label="잎" tip="타오르는 잎" />
+              <DecoBuddy name="kid" label="정원사" tip="오늘도 물 주는 중" />
             </div>
           </section>
 
@@ -304,11 +341,11 @@ export function App() {
                   wrap(async () => {
                     await api.createRepo({ name: createName, visibility: createVis });
                     await load(false);
-                  })
+                  }, "create")
                 }
               >
-                <PixelArt name="sprout" scale={2} />
-                생성하고 연결
+                {actionIcon("create", <PixelArt name="sprout" scale={2} />)}
+                {busy && busyAction === "create" ? "만드는 중" : "생성하고 연결"}
               </button>
             </div>
           </section>
@@ -325,7 +362,7 @@ export function App() {
               <input
                 value={connectUrl}
                 onChange={(e) => setConnectUrl(e.target.value)}
-                placeholder="https://github.com/min2h/jandi-flow-test-repo"
+                placeholder="https://github.com/username/repository"
               />
               <button
                 disabled={busy}
@@ -334,13 +371,13 @@ export function App() {
                     await api.connectRepo(connectUrl);
                     setConnectUrl("");
                     await load(false);
-                  })
+                  }, "connect")
                 }
               >
-                <PixelArt name="check" scale={2} />
-                연결 확인
+                {actionIcon("connect", <PixelArt name="check" scale={2} />)}
+                {busy && busyAction === "connect" ? "연결하는 중" : "연결 확인"}
               </button>
-              <div className="hint">private 테스트면 PAT에 repo 권한이 있어야 합니다. 예: https://github.com/min2h/jandi-flow-test-repo</div>
+              <div className="hint">private 레포는 PAT에 repo 권한이 있어야 합니다.</div>
             </div>
           </section>
 
@@ -364,21 +401,36 @@ export function App() {
                     </div>
                   </div>
                   <div className="row">
-                    <button className="ghost" disabled={busy} onClick={() => wrap(async () => { await api.healthRepo(repo.id); await load(false); })}>
-                      <PixelArt name="key" scale={2} />
-                      검증
+                    <button
+                      className="ghost"
+                      disabled={busy}
+                      onClick={() => wrap(async () => { await api.healthRepo(repo.id); await load(false); }, `health:${repo.id}`)}
+                    >
+                      {actionIcon(`health:${repo.id}`, <PixelArt name="key" scale={2} />)}
+                      {busy && busyAction === `health:${repo.id}` ? "검증 중" : "검증"}
                     </button>
-                    <button className="ok" disabled={busy} onClick={() => wrap(async () => { await api.runNow(repo.id); await load(false); })}>
-                      <PixelArt name="sprout" scale={2} />
-                      지금 심기
+                    <button
+                      className="ok"
+                      disabled={busy}
+                      onClick={() => wrap(async () => { await api.runNow(repo.id); await load(false); }, `plant:${repo.id}`)}
+                    >
+                      {actionIcon(`plant:${repo.id}`, <PixelArt name="sprout" scale={2} />)}
+                      {busy && busyAction === `plant:${repo.id}` ? "심는 중" : "지금 심기"}
                     </button>
-                    <button disabled={busy} onClick={() => wrap(async () => { await api.runNow(repo.id, true); await load(false); })}>
-                      <PixelArt name="leaf" scale={2} />
-                      오늘 불태우기
+                    <button
+                      disabled={busy}
+                      onClick={() => wrap(async () => { await api.runNow(repo.id, true); await load(false); }, `burn:${repo.id}`)}
+                    >
+                      {actionIcon(`burn:${repo.id}`, <PixelArt name="leaf" scale={2} />)}
+                      {busy && busyAction === `burn:${repo.id}` ? "불태우는 중" : "오늘 불태우기"}
                     </button>
-                    <button className="warn" disabled={busy} onClick={() => wrap(async () => { await api.deleteRepo(repo.id); await load(false); })}>
-                      <PixelArt name="warn" scale={2} />
-                      해제
+                    <button
+                      className="warn"
+                      disabled={busy}
+                      onClick={() => wrap(async () => { await api.deleteRepo(repo.id); await load(false); }, `delete:${repo.id}`)}
+                    >
+                      {actionIcon(`delete:${repo.id}`, <PixelArt name="warn" scale={2} />)}
+                      {busy && busyAction === `delete:${repo.id}` ? "해제 중" : "해제"}
                     </button>
                   </div>
                 </div>
@@ -422,8 +474,8 @@ export function App() {
                   value={settings.commitMode}
                   onChange={(e) => setSettings({ ...settings, commitMode: e.target.value as Settings["commitMode"] })}
                 >
-                  <option value="empty">빈 커밋 (기존 코드 미변경)</option>
-                  <option value="log">.janfi/garden.log 만 추가</option>
+                  <option value="log">.jandi/GARDEN.md 에 기록 추가</option>
+                  <option value="empty">빈 커밋 (파일 변경 없음)</option>
                 </select>
                 <div className="row">
                   <select
@@ -491,10 +543,10 @@ export function App() {
                 <button
                   className="ok"
                   disabled={busy}
-                  onClick={() => wrap(async () => { setSettings(await api.saveSettings(settings)); })}
+                  onClick={() => wrap(async () => { setSettings(await api.saveSettings(settings)); }, "save")}
                 >
-                  <PixelArt name="star" scale={2} />
-                  설정 저장
+                  {actionIcon("save", <PixelArt name="star" scale={2} />)}
+                  {busy && busyAction === "save" ? "저장하는 중" : "설정 저장"}
                 </button>
               </div>
             </section>
@@ -519,14 +571,14 @@ export function App() {
             <div className="tile-head">
               <PixelArt name="ghost" scale={3} />
               <div>
-                <div className="kicker">TIP</div>
+                <div className="kicker">안내</div>
                 <h2>기존 기능은 그대로</h2>
               </div>
             </div>
-            <p>빈 커밋이 기본입니다. 대상 레포 소스는 수정하지 않습니다.</p>
-            <button disabled={busy} onClick={() => wrap(async () => { await api.runNow(); await load(false); })}>
-              <PixelArt name="leaf" scale={2} />
-              연결된 모든 레포 지금 심기
+            <p>기본은 <code>.jandi/GARDEN.md</code> 에 날짜·메시지를 한 줄 추가합니다. 대상 레포의 기존 소스는 건드리지 않습니다.</p>
+            <button disabled={busy} onClick={() => wrap(async () => { await api.runNow(); await load(false); }, "plantAll")}>
+              {actionIcon("plantAll", <PixelArt name="leaf" scale={2} />)}
+              {busy && busyAction === "plantAll" ? "심는 중" : "연결된 모든 레포 지금 심기"}
             </button>
             {error && (
               <div className="error" style={{ marginTop: 8 }}>
